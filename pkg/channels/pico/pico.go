@@ -106,6 +106,8 @@ type PicoChannel struct {
 	cancel             context.CancelFunc
 	progress           *channels.ToolFeedbackAnimator
 	deleteMessageFn    func(context.Context, string, string) error
+	// broadcastFn lets tests intercept outbound broadcasts. nil → broadcastToSession.
+	broadcastFn func(chatID string, msg PicoMessage) error
 }
 
 // NewPicoChannel creates a new Pico Protocol channel.
@@ -675,8 +677,9 @@ func (s *picoStreamer) sendLocked(ctx context.Context, content string, contextUs
 			payload[PayloadKeyModelName] = s.modelName
 		}
 		setContextUsagePayload(payload, contextUsage)
+		setTurnUsagePayload(payload, s.turnInputTokens, s.turnOutputTokens)
 		outMsg := newMessage(TypeMessageCreate, payload)
-		if err := s.channel.broadcastToSession(s.chatID, outMsg); err != nil {
+		if err := s.channel.broadcast(s.chatID, outMsg); err != nil {
 			return err
 		}
 	} else if content != s.lastContent || contextUsage != nil {
@@ -687,6 +690,7 @@ func (s *picoStreamer) sendLocked(ctx context.Context, content string, contextUs
 		if s.modelName != "" {
 			payload[PayloadKeyModelName] = s.modelName
 		}
+		setTurnUsagePayload(payload, s.turnInputTokens, s.turnOutputTokens)
 		if err := s.channel.editMessagePayload(ctx, s.chatID, s.messageID, payload, contextUsage); err != nil {
 			return err
 		}
@@ -944,6 +948,14 @@ func (c *PicoChannel) handleMediaDownload(w http.ResponseWriter, r *http.Request
 	}
 	w.Header().Set("Content-Type", contentType)
 	http.ServeContent(w, r, filename, info.ModTime(), file)
+}
+
+// broadcast routes through broadcastFn when set (tests), else broadcastToSession.
+func (c *PicoChannel) broadcast(chatID string, msg PicoMessage) error {
+	if c.broadcastFn != nil {
+		return c.broadcastFn(chatID, msg)
+	}
+	return c.broadcastToSession(chatID, msg)
 }
 
 // broadcastToSession sends a message to all connections with a matching session.
