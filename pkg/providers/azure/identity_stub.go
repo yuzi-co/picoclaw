@@ -1,4 +1,4 @@
-//go:build !azidentity
+//go:build !azidentity || ironkvm
 
 // Stub for the Entra ID auth path when built without the azidentity tag.
 // Mirrors the exported surface of identity.go so callers compile cleanly

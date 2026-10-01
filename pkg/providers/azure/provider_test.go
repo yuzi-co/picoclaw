@@ -1,3 +1,5 @@
+//go:build !ironkvm
+
 package azure
 
 import (
