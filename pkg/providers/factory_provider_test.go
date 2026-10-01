@@ -1444,6 +1444,9 @@ func TestCreateProviderFromConfig_UserAgent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if sdkProvidersOmitted && strings.HasPrefix(tt.model, "azure/") {
+				t.Skip("azure provider is not part of this build")
+			}
 			var receivedUA string
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				receivedUA = r.Header.Get("User-Agent")

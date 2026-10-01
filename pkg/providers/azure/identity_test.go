@@ -1,4 +1,4 @@
-//go:build azidentity
+//go:build azidentity && !ironkvm
 
 package azure
 
