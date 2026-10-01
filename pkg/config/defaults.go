@@ -16,7 +16,7 @@ import (
 func DefaultConfig() *Config {
 	workspacePath := filepath.Join(GetHome(), pkg.WorkspaceName)
 
-	return &Config{
+	cfg := &Config{
 		Version: CurrentVersion,
 		// Isolation is opt-in so existing installations keep their current behavior
 		// until the user explicitly enables subprocess sandboxing.
@@ -514,6 +514,8 @@ func DefaultConfig() *Config {
 			GoVersion: GoVersion,
 		},
 	}
+	applyBuildDefaults(cfg)
+	return cfg
 }
 
 func defaultChannels() ChannelsConfig {
