@@ -20,6 +20,7 @@ import (
 
 	"github.com/sipeed/picoclaw/pkg/bus"
 	"github.com/sipeed/picoclaw/pkg/channels"
+	"github.com/sipeed/picoclaw/pkg/commands"
 	"github.com/sipeed/picoclaw/pkg/config"
 	"github.com/sipeed/picoclaw/pkg/identity"
 	"github.com/sipeed/picoclaw/pkg/logger"
@@ -1181,6 +1182,14 @@ func (c *PicoChannel) handleMessageSend(pc *picoConn, msg PicoMessage) {
 
 	if strings.TrimSpace(content) == "" && len(media) == 0 {
 		errMsg := newErrorWithPayload("empty_content", "message content is empty", map[string]any{
+			"request_id": msg.ID,
+		})
+		pc.writeJSON(errMsg)
+		return
+	}
+
+	if !c.config.AllowControlCommands && commands.IsControlCommand(content) {
+		errMsg := newErrorWithPayload("command_disabled", controlCommandDisabledMsg, map[string]any{
 			"request_id": msg.ID,
 		})
 		pc.writeJSON(errMsg)
