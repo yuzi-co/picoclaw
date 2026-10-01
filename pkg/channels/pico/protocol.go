@@ -78,3 +78,7 @@ func newErrorWithPayload(code, message string, extra map[string]any) PicoMessage
 func newError(code, message string) PicoMessage {
 	return newErrorWithPayload(code, message, nil)
 }
+
+// controlCommandDisabledMsg is returned when a client sends /reload or
+// another control command while allow_control_commands is off.
+const controlCommandDisabledMsg = "control commands are disabled on the pico channel (set allow_control_commands to enable them)"
