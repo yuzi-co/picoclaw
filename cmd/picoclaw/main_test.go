@@ -52,6 +52,10 @@ func TestNewPicoclawCommand(t *testing.T) {
 		"version",
 	}
 
+	if !updateCommandEnabled {
+		allowedCommands = slices.DeleteFunc(allowedCommands, func(name string) bool { return name == "update" })
+	}
+
 	subcommands := cmd.Commands()
 	assert.Len(t, subcommands, len(allowedCommands))
 

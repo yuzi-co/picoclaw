@@ -1,4 +1,4 @@
-//go:build azidentity
+//go:build azidentity && !ironkvm
 
 // Entra ID (DefaultAzureCredential) auth adapter.
 // Built only when -tags azidentity is supplied; otherwise identity_stub.go

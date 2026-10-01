@@ -1,4 +1,4 @@
-//go:build mipsle || netbsd || (freebsd && arm)
+//go:build mipsle || netbsd || (freebsd && arm) || ironkvm
 
 package agent
 
