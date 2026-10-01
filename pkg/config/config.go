@@ -450,6 +450,11 @@ type AgentDefaults struct {
 	LLMRetryBackoffSecs       int                `json:"llm_retry_backoff_secs,omitempty" env:"PICOCLAW_AGENTS_DEFAULTS_LLM_RETRY_BACKOFF_SECS"`
 	LLMRetryOnEmptyContent    bool               `json:"llm_retry_on_empty_content"       env:"PICOCLAW_AGENTS_DEFAULTS_LLM_RETRY_ON_EMPTY_CONTENT"`
 	LLMRetryOnFinishReasons   []string           `json:"llm_retry_on_finish_reasons"      env:"PICOCLAW_AGENTS_DEFAULTS_LLM_RETRY_ON_FINISH_REASONS"`
+	// TurnTimeBudgetSeconds caps the wall-clock time a single turn may run.
+	// When exceeded, the agent is asked to stop scheduling tools and deliver a
+	// concise summary of the work done so far instead of running to the
+	// iteration limit. 0 (default) disables the budget.
+	TurnTimeBudgetSeconds int `json:"turn_time_budget_seconds,omitempty" env:"PICOCLAW_AGENTS_DEFAULTS_TURN_TIME_BUDGET_SECONDS"`
 }
 
 const DefaultMaxMediaSize = 20 * 1024 * 1024 // 20 MB
