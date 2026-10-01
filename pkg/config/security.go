@@ -212,19 +212,30 @@ type SensitiveDataCache struct {
 // SensitiveDataReplacer returns the strings.Replacer for filtering sensitive data.
 // It is computed once on first access via sync.Once.
 func (sec *Config) SensitiveDataReplacer() *strings.Replacer {
-	sec.initSensitiveCache()
-	return sec.sensitiveCache.replacer
+	return sec.initSensitiveCache().replacer
 }
 
-// initSensitiveCache initializes the sensitive data cache if not already done.
-func (sec *Config) initSensitiveCache() {
+// sensitiveCacheMu guards the lazy allocation of Config.sensitiveCache.
+// It is package level rather than a field so Config carries no lock and
+// stays safe to copy by value.
+var sensitiveCacheMu sync.Mutex
+
+// initSensitiveCache initializes the sensitive data cache if not already done
+// and returns it. It is safe for concurrent use: two agent turns can filter
+// output at the same time, and before the pointer was guarded one of them
+// could see a cache whose replacer was still nil.
+func (sec *Config) initSensitiveCache() *SensitiveDataCache {
+	sensitiveCacheMu.Lock()
 	if sec.sensitiveCache == nil {
 		sec.sensitiveCache = &SensitiveDataCache{}
 	}
-	sec.sensitiveCache.once.Do(func() {
+	cache := sec.sensitiveCache
+	sensitiveCacheMu.Unlock()
+
+	cache.once.Do(func() {
 		values := sec.collectSensitiveValues()
 		if len(values) == 0 {
-			sec.sensitiveCache.replacer = strings.NewReplacer()
+			cache.replacer = strings.NewReplacer()
 			return
 		}
 
@@ -236,11 +247,12 @@ func (sec *Config) initSensitiveCache() {
 			}
 		}
 		if len(pairs) == 0 {
-			sec.sensitiveCache.replacer = strings.NewReplacer()
+			cache.replacer = strings.NewReplacer()
 			return
 		}
-		sec.sensitiveCache.replacer = strings.NewReplacer(pairs...)
+		cache.replacer = strings.NewReplacer(pairs...)
 	})
+	return cache
 }
 
 // collectSensitiveValues collects all sensitive strings from SecurityConfig using reflection.
