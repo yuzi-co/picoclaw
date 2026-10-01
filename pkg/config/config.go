@@ -652,6 +652,10 @@ type PicoSettings struct {
 	ReadTimeout     int             `json:"read_timeout,omitempty"      yaml:"-"`
 	WriteTimeout    int             `json:"write_timeout,omitempty"     yaml:"-"`
 	MaxConnections  int             `json:"max_connections,omitempty"   yaml:"-"`
+	// AllowControlCommands lets clients send /reload and /switch. Off by
+	// default: anything that can write to the socket could otherwise
+	// reload the config or swap the model.
+	AllowControlCommands bool `json:"allow_control_commands,omitempty" yaml:"-"`
 }
 
 // SetToken sets the Pico token and marks it as dirty for security saving
@@ -665,6 +669,8 @@ type PicoClientSettings struct {
 	SessionID    string       `json:"session_id,omitempty"    yaml:"-"`
 	PingInterval int          `json:"ping_interval,omitempty" yaml:"-"`
 	ReadTimeout  int          `json:"read_timeout,omitempty"  yaml:"-"`
+	// AllowControlCommands lets the remote server send /reload and /switch.
+	AllowControlCommands bool `json:"allow_control_commands,omitempty" yaml:"-"`
 }
 
 type IRCSettings struct {

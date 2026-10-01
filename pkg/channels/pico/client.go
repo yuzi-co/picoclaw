@@ -14,6 +14,7 @@ import (
 
 	"github.com/sipeed/picoclaw/pkg/bus"
 	"github.com/sipeed/picoclaw/pkg/channels"
+	"github.com/sipeed/picoclaw/pkg/commands"
 	"github.com/sipeed/picoclaw/pkg/config"
 	"github.com/sipeed/picoclaw/pkg/identity"
 	"github.com/sipeed/picoclaw/pkg/logger"
@@ -261,6 +262,13 @@ func (c *PicoClientChannel) handleServerMessage(pc *picoConn, msg PicoMessage) {
 		media = nil
 	}
 	if strings.TrimSpace(content) == "" && len(media) == 0 {
+		return
+	}
+
+	if !c.config.AllowControlCommands && commands.IsControlCommand(content) {
+		logger.WarnCF("pico_client", controlCommandDisabledMsg, map[string]any{
+			"preview": truncate(content, 50),
+		})
 		return
 	}
 
