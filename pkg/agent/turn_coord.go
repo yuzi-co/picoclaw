@@ -102,6 +102,25 @@ func (al *AgentLoop) runTurn(ctx context.Context, ts *turnState, pipeline *Pipel
 		ts.setIteration(iteration)
 		ts.setPhase(TurnPhaseRunning)
 
+		// Wall-clock turn budget: once exceeded, ask the model to stop
+		// scheduling new tools and deliver a partial summary instead of
+		// running until the iteration limit.
+		if budget := ts.agent.TurnTimeBudget; budget > 0 && time.Since(ts.startedAt) >= budget {
+			if ts.markBudgetStopRequested() {
+				hint := fmt.Sprintf("turn time budget of %s exceeded (elapsed %s); stop scheduling new tools and summarize the progress so far", budget, time.Since(ts.startedAt).Round(time.Second))
+				if ts.requestGracefulInterrupt(hint) {
+					al.emitEvent(
+						runtimeevents.KindAgentInterruptReceived,
+						ts.eventMeta("runTurn", "turn.time_budget.exceeded"),
+						InterruptReceivedPayload{
+							Kind:    InterruptKindGraceful,
+							HintLen: len(hint),
+						},
+					)
+				}
+			}
+		}
+
 		if iteration > 1 {
 			// For subsequent iterations, read from exec.pendingMessages which
 			// is where ExecuteTools (or initial poll) deposits steering.
