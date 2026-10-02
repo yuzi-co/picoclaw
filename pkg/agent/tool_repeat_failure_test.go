@@ -18,7 +18,7 @@ import (
 // real-world failure where the model retries a broken tool (e.g. a git command
 // that fails because no credentials are configured) indefinitely.
 type alwaysFailingToolProvider struct {
-	mu       sync.Mutex
+	mu        sync.Mutex
 	callCount int
 }
 

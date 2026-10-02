@@ -200,8 +200,8 @@ type turnState struct {
 	// Repeated identical failure tracking (circuit breaker). When the same
 	// tool fails with the same error N consecutive times, the loop stops early
 	// instead of spinning to max_tool_iterations with no user feedback.
-	lastFailureTool    string
-	lastFailureError   string
+	lastFailureTool     string
+	lastFailureError    string
 	consecutiveFailures int
 
 	channel     string

@@ -239,12 +239,12 @@ func (al *AgentLoop) runTurn(ctx context.Context, ts *turnState, pipeline *Pipel
 				if count, tool, errorSummary := ts.repeatedFailureSnapshot(); count >= repeatedFailureThreshold {
 					logger.InfoCF("agent", "Stopping turn: repeated identical tool failure",
 						map[string]any{
-							"agent_id":   ts.agentID,
-							"turn_id":    ts.turnID,
-							"iteration":  iteration,
-							"tool":       tool,
-							"failures":   count,
-							"error":      errorSummary,
+							"agent_id":  ts.agentID,
+							"turn_id":   ts.turnID,
+							"iteration": iteration,
+							"tool":      tool,
+							"failures":  count,
+							"error":     errorSummary,
 						})
 					finalContent = fmt.Sprintf(repeatedFailureResponse, tool, count, errorSummary)
 					result, finalizeErr := pipeline.Finalize(ctx, turnCtx, ts, exec, turnStatus, finalContent)
