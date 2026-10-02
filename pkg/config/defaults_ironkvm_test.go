@@ -40,6 +40,9 @@ func assertHardenedDefaults(t *testing.T, cfg *Config) {
 			t.Errorf("%s = %v, want %v", c.name, c.got, c.want)
 		}
 	}
+	if got := cfg.Agents.Defaults.MaxContextImages; got != 2 {
+		t.Errorf("agents.defaults.max_context_images = %d, want 2", got)
+	}
 	for _, registry := range cfg.Tools.Skills.Registries {
 		if registry != nil && registry.Enabled {
 			t.Errorf("skill registry %q enabled, want disabled", registry.Name)
