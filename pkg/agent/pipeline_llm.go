@@ -58,6 +58,7 @@ func (p *Pipeline) CallLLM(
 		exec.providerToolDefs = filtered
 	}
 
+	exec.messages = capContextImages(exec.messages, p.Cfg.Agents.Defaults.MaxContextImages)
 	exec.callMessages = exec.messages
 	if exec.gracefulTerminal {
 		exec.callMessages = append(append([]providers.Message(nil), exec.messages...), ts.interruptHintMessage())

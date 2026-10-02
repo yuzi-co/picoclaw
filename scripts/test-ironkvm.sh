@@ -14,12 +14,15 @@
 #   RACE      1 to run with -race
 #   GOMODCACHE_VOLUME  docker volume for the module cache (default
 #             picoclaw-gomod)
+#   DOCKER    container runtime that takes docker's run options (default
+#             docker)
 
 set -eu
 
 GO_IMAGE=${GO_IMAGE:-golang:1.25.14}
 RACE=${RACE:-0}
 GOMODCACHE_VOLUME=${GOMODCACHE_VOLUME:-picoclaw-gomod}
+DOCKER=${DOCKER:-docker}
 TAGS=goolm,stdjson,ironkvm
 
 # Upstream tests that assert the stock defaults which the ironkvm build
@@ -57,11 +60,11 @@ fi
 export MSYS_NO_PATHCONV=1
 
 # Fill the module cache as root, then test as an unprivileged user.
-docker run --rm -v "$GOMODCACHE_VOLUME:/go/pkg/mod" -v "$ROOT:/src:ro" -w /src \
+"$DOCKER" run --rm -v "$GOMODCACHE_VOLUME:/go/pkg/mod" -v "$ROOT:/src:ro" -w /src \
 	"$GO_IMAGE" go mod download
 
 # shellcheck disable=SC2086
-docker run --rm --user 65534:65534 \
+"$DOCKER" run --rm --user 65534:65534 \
 	-v "$GOMODCACHE_VOLUME:/go/pkg/mod" -v "$ROOT:/mnt/src:ro" -w /tmp \
 	-e HOME=/tmp -e GOCACHE=/tmp/go-build -e "GOFLAGS=-mod=readonly -buildvcs=false" -e GOTOOLCHAIN=local \
 	$RACE_ENV "$GO_IMAGE" sh -euc "
