@@ -41,11 +41,25 @@ func semanticRetryError(
 		return nil
 	}
 	for _, reason := range defaults.LLMRetryOnFinishReasons {
-		if strings.EqualFold(strings.TrimSpace(reason), resp.FinishReason) {
+		if finishReasonMatches(reason, resp.FinishReason) {
 			return fmt.Errorf("%w: finish_reason=%q", errSemanticRetry, resp.FinishReason)
 		}
 	}
 	return nil
+}
+
+// finishReasonMatches compares a configured finish reason with a response's.
+// The providers report the OpenAI "length" as "truncated"
+// (common.NormalizeFinishReason), so the two names match each other.
+func finishReasonMatches(want, got string) bool {
+	norm := func(s string) string {
+		s = strings.ToLower(strings.TrimSpace(s))
+		if s == "length" {
+			return "truncated"
+		}
+		return s
+	}
+	return want != "" && norm(want) == norm(got)
 }
 
 // semanticRetryReason is the retry reason reported in events and logs.

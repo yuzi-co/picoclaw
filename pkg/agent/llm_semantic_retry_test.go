@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/sipeed/picoclaw/pkg/bus"
@@ -25,6 +26,7 @@ func TestSemanticRetryError(t *testing.T) {
 		{"empty with tool calls", on, &providers.LLMResponse{ToolCalls: []providers.ToolCall{{ID: "a", Name: "t"}}}, false, ""},
 		{"truncated", on, &providers.LLMResponse{Content: "half an ans", FinishReason: "length"}, false, "finish_reason"},
 		{"truncated, case differs", on, &providers.LLMResponse{Content: "x", FinishReason: "LENGTH"}, false, "finish_reason"},
+		{"truncated, normalized name", on, &providers.LLMResponse{Content: "x", FinishReason: "truncated"}, false, "finish_reason"},
 		{"truncated but already streamed", on, &providers.LLMResponse{Content: "half", FinishReason: "length"}, true, ""},
 		{"complete", on, &providers.LLMResponse{Content: "answer", FinishReason: "stop"}, false, ""},
 		{"empty, retry off", config.AgentDefaults{}, &providers.LLMResponse{}, false, ""},
@@ -58,7 +60,14 @@ func TestSemanticRetryError(t *testing.T) {
 // last one.
 type scriptedProvider struct {
 	responses []*providers.LLMResponse
+	mu        sync.Mutex
 	calls     int
+}
+
+func (p *scriptedProvider) callCount() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.calls
 }
 
 func (p *scriptedProvider) Chat(
@@ -68,11 +77,13 @@ func (p *scriptedProvider) Chat(
 	model string,
 	opts map[string]any,
 ) (*providers.LLMResponse, error) {
+	p.mu.Lock()
 	i := p.calls
 	if i >= len(p.responses) {
 		i = len(p.responses) - 1
 	}
 	p.calls++
+	p.mu.Unlock()
 	resp := *p.responses[i]
 	return &resp, nil
 }

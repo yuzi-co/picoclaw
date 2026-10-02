@@ -27,7 +27,7 @@ type picoTurnHarness struct {
 	msgs chan pico.PicoMessage
 }
 
-func newPicoTurnHarness(t *testing.T, provider providers.LLMProvider) *picoTurnHarness {
+func newPicoTurnHarness(t *testing.T, provider providers.LLMProvider, tweak ...func(*config.AgentDefaults)) *picoTurnHarness {
 	t.Helper()
 	msgBus := bus.NewMessageBus()
 	cfg := &config.Config{
@@ -38,6 +38,9 @@ func newPicoTurnHarness(t *testing.T, provider providers.LLMProvider) *picoTurnH
 			MaxToolIterations: 5,
 		}},
 		ModelList: []*config.ModelConfig{{ModelName: "test-model", Model: "openai/test-model"}},
+	}
+	for _, f := range tweak {
+		f(&cfg.Agents.Defaults)
 	}
 
 	bc := &config.Channel{Type: config.ChannelPico, Enabled: true}
@@ -270,4 +273,30 @@ func TestTurnReport_NotKeptForChannelsWithoutTurnDone(t *testing.T) {
 		t.Fatal("report kept for a channel that cannot deliver turn.done")
 	}
 	var _ channels.TurnDoneNotifier = (*pico.PicoChannel)(nil)
+}
+
+// A model that keeps answering empty: every attempt is counted in the usage
+// and the turn ends as an error, after the canned notice.
+func TestPicoTurnDone_EmptyAfterRetriesIsAnError(t *testing.T) {
+	provider := &scriptedProvider{responses: []*providers.LLMResponse{{
+		ReasoningContent: "thinking only",
+		FinishReason:     "truncated",
+		Usage:            &providers.UsageInfo{PromptTokens: 50, CompletionTokens: 60, TotalTokens: 110},
+	}}}
+	h := newPicoTurnHarness(t, provider, func(d *config.AgentDefaults) {
+		d.MaxLLMRetries = 2
+		d.LLMRetryBackoffSecs = 1
+		d.LLMRetryOnEmptyContent = true
+		d.LLMRetryOnFinishReasons = []string{"length"}
+	})
+	h.send("req-empty", "hi")
+	msgs := h.untilTurnDone()
+	_, done := lastOfType(msgs, pico.TypeTurnDone)
+	if done.Payload["status"] != "error" {
+		t.Fatalf("status = %v, want error", done.Payload["status"])
+	}
+	usage, _ := done.Payload["usage"].(map[string]any)
+	if calls := provider.callCount(); calls != 3 || usage["llm_calls"] != float64(3) || usage["total_tokens"] != float64(330) {
+		t.Fatalf("calls = %d, usage = %v; want 3 calls counted", calls, usage)
+	}
 }
