@@ -1266,6 +1266,8 @@ type MCPConfig struct {
 	Discovery  ToolDiscoveryConfig `                                json:"discovery"`
 	// MaxInlineTextChars controls how much MCP text stays inline before it is saved as an artifact.
 	MaxInlineTextChars int `json:"max_inline_text_chars,omitempty" env:"PICOCLAW_TOOLS_MCP_MAX_INLINE_TEXT_CHARS"`
+	// ConnectTimeoutSeconds bounds connecting to one server (default 30).
+	ConnectTimeoutSeconds int `json:"connect_timeout_seconds,omitempty" env:"PICOCLAW_TOOLS_MCP_CONNECT_TIMEOUT_SECONDS"`
 	// Servers is a map of server name to server configuration
 	Servers map[string]MCPServerConfig `json:"servers,omitempty"`
 }
