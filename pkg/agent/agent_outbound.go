@@ -138,7 +138,7 @@ func (al *AgentLoop) publishResponse(
 	if sessionKey != "" {
 		msg.ContextUsage = computeContextUsage(al.agentForSession(sessionKey), sessionKey)
 	}
-	al.attachTurnUsage(&msg)
+	al.noteFinalReply(&msg)
 	markFinalOutbound(&msg)
 
 	// A failure notice is often produced while the parent context is already

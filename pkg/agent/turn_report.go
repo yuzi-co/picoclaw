@@ -169,6 +169,16 @@ func (al *AgentLoop) turnUsageSnapshot(channel, chatID string) *channels.TurnUsa
 	return &usage
 }
 
+// noteFinalReply puts the turn's usage so far on a final reply and marks the
+// report failed when the reply is the canned empty-response notice: the
+// model gave no answer even after the retries.
+func (al *AgentLoop) noteFinalReply(msg *bus.OutboundMessage) {
+	if msg.Content == defaultResponse {
+		al.noteTurnFailed(msg.Context.Channel, msg.Context.ChatID)
+	}
+	al.attachTurnUsage(msg)
+}
+
 // attachTurnUsage puts the turn's usage so far on a final reply.
 func (al *AgentLoop) attachTurnUsage(msg *bus.OutboundMessage) {
 	usage := al.turnUsageSnapshot(msg.Context.Channel, msg.Context.ChatID)
