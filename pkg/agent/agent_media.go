@@ -94,6 +94,9 @@ func resolveMediaRefs(
 
 		for _, ref := range m.Media {
 			if !strings.HasPrefix(ref, "media://") {
+				if isHistoricalDataURL(ref, idx, currentTurnStart) {
+					continue
+				}
 				resolved = append(resolved, ref)
 				continue
 			}
@@ -130,6 +133,9 @@ func resolveMediaRefs(
 		msg.Media = resolved
 		if len(pathTags) > 0 {
 			msg.Content = injectPathTags(msg.Content, pathTags)
+		}
+		if idx < currentTurnStart {
+			msg = noteOmittedImage(msg, historicalImageOmittedNote)
 		}
 		result = append(result, msg)
 
