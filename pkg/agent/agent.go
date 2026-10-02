@@ -119,8 +119,15 @@ type continuationTarget struct {
 }
 
 const (
-	defaultResponse            = "The model returned an empty response. This may indicate a provider error or token limit."
-	toolLimitResponse          = "I've reached `max_tool_iterations` without a final response. Increase `max_tool_iterations` in config.json if this task needs more tool steps."
+	defaultResponse    = "The model returned an empty response. This may indicate a provider error or token limit."
+	panicNoticeMessage = "I hit an internal error while processing your message and could not finish. Please send it again."
+	toolLimitResponse  = "I've reached `max_tool_iterations` without a final response. Increase `max_tool_iterations` in config.json if this task needs more tool steps."
+	// repeatedFailureThreshold is the number of consecutive identical
+	// tool+error failures after which the turn is stopped early with a
+	// user-visible explanation instead of spinning silently to
+	// max_tool_iterations (see issue: unanswered messages).
+	repeatedFailureThreshold   = 3
+	repeatedFailureResponse    = "I kept hitting the same error while using the `%s` tool (%d times in a row):\n\n%s\n\nStopping here instead of retrying the same failing call. If the task needs this tool, fix the underlying problem and try again."
 	handledToolResponseSummary = "Requested output delivered via tool attachment."
 	sessionKeyAgentPrefix      = "agent:"
 	pendingTurnPrefix          = "pending-"
@@ -263,6 +270,17 @@ func (al *AgentLoop) Run(ctx context.Context) error {
 								"chat_id":     m.ChatID,
 								"panic":       fmt.Sprintf("%v", r),
 							})
+						// The turn died without producing a reply. Tell the user
+						// instead of leaving them waiting on a silent chat.
+						// publishTurnFailureNotice detaches from ctx cancellation
+						// itself, so the notice survives the teardown.
+						al.publishTurnFailureNotice(
+							ctx,
+							m.Channel,
+							m.ChatID,
+							sessionKey,
+							panicNoticeMessage,
+						)
 					}
 				}()
 				defer func() { <-al.workerSem }() // Release slot
