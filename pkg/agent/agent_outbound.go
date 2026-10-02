@@ -53,6 +53,7 @@ func (al *AgentLoop) publishTurnFailureNotice(
 	if constants.IsInternalChannel(channel) {
 		return
 	}
+	al.noteTurnFailed(channel, chatID)
 
 	al.publishResponse(ctx, channel, chatID, sessionKey, notice, publishResponseOptions{
 		skipMessageToolSuppression: true,
@@ -137,6 +138,7 @@ func (al *AgentLoop) publishResponse(
 	if sessionKey != "" {
 		msg.ContextUsage = computeContextUsage(al.agentForSession(sessionKey), sessionKey)
 	}
+	al.attachTurnUsage(&msg)
 	markFinalOutbound(&msg)
 
 	// A failure notice is often produced while the parent context is already
