@@ -15,6 +15,8 @@
 #              whatsapp_native, it links GPL-3.0 libsignal)
 #   GOMODCACHE_VOLUME  docker volume for the module cache (default
 #              picoclaw-gomod; set to an empty string to use none)
+#   DOCKER     container runtime that takes docker's run options (default
+#              docker; IronKVM's tooling passes wslc)
 
 set -eu
 
@@ -22,6 +24,7 @@ REV=${1:-HEAD}
 GO_IMAGE=${GO_IMAGE:-golang:1.25.14}
 GO_TAGS=${GO_TAGS:-goolm,stdjson,ironkvm}
 GOMODCACHE_VOLUME=${GOMODCACHE_VOLUME-picoclaw-gomod}
+DOCKER=${DOCKER:-docker}
 
 case ",$GO_TAGS," in
 *,whatsapp_native,*)
@@ -51,7 +54,7 @@ fi
 
 # MSYS_NO_PATHCONV keeps Git Bash on Windows from rewriting /out and /src.
 # shellcheck disable=SC2086
-git archive --format=tar "$REV" | MSYS_NO_PATHCONV=1 docker run --rm -i \
+git archive --format=tar "$REV" | MSYS_NO_PATHCONV=1 "$DOCKER" run --rm -i \
 	$MOD_MOUNT \
 	-v "$OUT_DIR:/out" \
 	-e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=riscv64 \
