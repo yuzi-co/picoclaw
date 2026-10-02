@@ -32,6 +32,7 @@ func (al *AgentLoop) runTurn(ctx context.Context, ts *turnState, pipeline *Pipel
 
 	turnStatus := TurnEndStatusCompleted
 	defer func() {
+		al.noteTurnEnd(ts, turnStatus)
 		attemptedSkills := ts.attemptedSkillsSnapshot()
 		skillContextSnapshots := ts.skillContextSnapshotsSnapshot()
 		finalSuccessfulPath := []string(nil)

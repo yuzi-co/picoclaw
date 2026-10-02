@@ -60,6 +60,7 @@ type AgentLoop struct {
 	steering       *steeringQueue
 	pendingSkills  sync.Map
 	pendingStops   sync.Map
+	turnReports    sync.Map // chat -> *turnReport, see turn_report.go
 	mu             sync.RWMutex
 
 	// workerSem limits concurrent turn processing workers.
@@ -196,6 +197,7 @@ func (al *AgentLoop) Run(ctx context.Context) error {
 				phase:  TurnPhaseSetup,
 			}
 			if _, loaded := al.activeTurnStates.LoadOrStore(sessionKey, placeholder); loaded {
+				al.noteTurnRequest(msg)
 				if al.tryHandleStopCommand(ctx, msg, sessionKey) {
 					continue
 				}
@@ -222,7 +224,10 @@ func (al *AgentLoop) Run(ctx context.Context) error {
 			// Session claimed — spawn a worker goroutine that acquires a semaphore
 			// slot. The goroutine is spawned immediately so the main loop keeps
 			// draining the inbound channel. The goroutine blocks on the semaphore.
+			al.beginTurnReport(msg)
 			go func(m bus.InboundMessage, ph *turnState) {
+				// Runs last: after the panic notice and the turn's replies.
+				defer func() { al.finishTurnReport(ctx, m, ctx.Err()) }()
 				var releaseSession bool
 				// Acquire semaphore slot (blocks if at capacity)
 				select {

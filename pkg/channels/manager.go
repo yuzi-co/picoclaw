@@ -1466,6 +1466,10 @@ func (m *Manager) runWorker(ctx context.Context, name string, w *channelWorker) 
 			if !ok {
 				return
 			}
+			if OutboundMessageIsTurnDone(msg) {
+				m.deliverTurnDone(ctx, name, w.ch, msg)
+				continue
+			}
 			maxLen := 0
 			if mlp, ok := w.ch.(MessageLengthProvider); ok {
 				maxLen = mlp.MaxMessageLength()
