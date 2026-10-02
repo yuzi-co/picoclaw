@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -133,6 +134,8 @@ type Manager struct {
 	mu            sync.RWMutex
 	closed        atomic.Bool    // changed from bool to atomic.Bool to avoid TOCTOU race
 	wg            sync.WaitGroup // tracks in-flight CallTool calls
+	// connectTimeout bounds one server connection; see connect_timeout.go.
+	connectTimeout time.Duration
 }
 
 var connectServerFunc = connectServer
@@ -197,6 +200,7 @@ func (m *Manager) LoadFromMCPConfig(
 		map[string]any{
 			"count": len(mcpCfg.Servers),
 		})
+	m.applyConnectTimeout(mcpCfg)
 
 	var wg sync.WaitGroup
 	errs := make(chan error, len(mcpCfg.Servers))
@@ -294,7 +298,7 @@ func (m *Manager) ConnectServer(
 	cfg config.MCPServerConfig,
 ) error {
 	m.publishServerEvent(runtimeevents.KindMCPServerConnecting, name, cfg, 0, nil)
-	conn, err := connectServerFunc(ctx, name, cfg)
+	conn, err := m.connect(ctx, name, cfg)
 	if err != nil {
 		m.publishServerEvent(runtimeevents.KindMCPServerFailed, name, cfg, 0, err)
 		return err
@@ -631,7 +635,7 @@ func (m *Manager) reconnectServer(
 		return currentConn, nil
 	}
 
-	freshConn, err := connectServerFunc(ctx, serverName, staleConn.Config)
+	freshConn, err := m.connect(ctx, serverName, staleConn.Config)
 	if err != nil {
 		return nil, err
 	}
