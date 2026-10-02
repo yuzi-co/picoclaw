@@ -269,7 +269,15 @@ func (p *Pipeline) CallLLM(
 	for retry := 0; retry <= maxRetries; retry++ {
 		exec.response, err = callLLM(exec.callMessages, exec.providerToolDefs)
 		if err == nil {
-			break
+			// An empty or truncated reply goes through the retry path below
+			// while attempts remain; the last one is kept as it is.
+			if retry >= maxRetries {
+				break
+			}
+			err = semanticRetryError(p.Cfg.Agents.Defaults, exec.response, exec.streamingPublisher)
+			if err == nil {
+				break
+			}
 		}
 		if ts.hardAbortRequested() && errors.Is(err, context.Canceled) {
 			_ = ts.requestHardAbort()
@@ -712,6 +720,9 @@ func providerForFallbackCandidate(
 func transientLLMRetryReason(err error) (string, bool) {
 	if err == nil {
 		return "", false
+	}
+	if reason, ok := semanticRetryReason(err); ok {
+		return reason, true
 	}
 
 	if failErr := providers.ClassifyError(err, "", ""); failErr != nil {
