@@ -1024,6 +1024,7 @@ func sanitizeHistoryForProvider(history []providers.Message) []providers.Message
 	if len(history) == 0 {
 		return history
 	}
+	history = repairToolCallHistory(history)
 
 	sanitized := make([]providers.Message, 0, len(history))
 	for _, msg := range history {
