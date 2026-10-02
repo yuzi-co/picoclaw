@@ -13,6 +13,10 @@ package config
 // network fetch or search, no skills, no subagents and no scheduled work.
 func applyBuildDefaults(cfg *Config) {
 	cfg.Agents.Defaults.RestrictToWorkspace = true
+
+	// Screenshots are large and the models IronKVM runs are small local
+	// ones: keep only the two newest images in the model context.
+	cfg.Agents.Defaults.MaxContextImages = 2
 	cfg.Agents.Defaults.AllowReadOutsideWorkspace = false
 
 	// Exec is off. If a config turns it back on, it may not run for
