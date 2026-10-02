@@ -347,6 +347,7 @@ func (c *PicoChannel) Send(ctx context.Context, msg bus.OutboundMessage) ([]stri
 		}
 	}
 	setContextUsagePayload(payload, msg.ContextUsage)
+	setFinalTurnUsagePayload(payload, msg)
 	outMsg := newMessage(TypeMessageCreate, payload)
 
 	if err := c.broadcastToSession(msg.ChatID, outMsg); err != nil {

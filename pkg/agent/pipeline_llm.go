@@ -514,6 +514,7 @@ func (p *Pipeline) CallLLM(
 		ts.SetLastFinishReason(exec.response.FinishReason)
 		if exec.response.Usage != nil {
 			ts.SetLastUsage(exec.response.Usage)
+			al.noteTurnUsage(ts, exec.response.Usage)
 		}
 	}
 
