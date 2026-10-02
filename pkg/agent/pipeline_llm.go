@@ -278,6 +278,8 @@ func (p *Pipeline) CallLLM(
 			if err == nil {
 				break
 			}
+			// The discarded reply still cost tokens.
+			al.noteTurnUsage(ts, exec.response.Usage)
 		}
 		if ts.hardAbortRequested() && errors.Is(err, context.Canceled) {
 			_ = ts.requestHardAbort()
