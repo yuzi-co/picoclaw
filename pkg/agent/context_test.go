@@ -290,13 +290,15 @@ func TestSanitizeHistoryForProvider_IncompleteToolResults(t *testing.T) {
 	}
 
 	result := sanitizeHistoryForProvider(history)
-	// The assistant message with incomplete tool results should be dropped,
-	// along with its partial tool result. The remaining messages are:
-	// user ("do two things"), user ("next question"), assistant ("answer")
-	if len(result) != 3 {
-		t.Fatalf("expected 3 messages, got %d: %+v", len(result), roles(result))
+	// repairToolCallHistory adds a placeholder result for B, so the block
+	// survives instead of being dropped.
+	if len(result) != 6 {
+		t.Fatalf("expected 6 messages, got %d: %+v", len(result), roles(result))
 	}
-	assertRoles(t, result, "user", "user", "assistant")
+	assertRoles(t, result, "user", "assistant", "tool", "tool", "user", "assistant")
+	if result[3].ToolCallID != "B" || result[3].Content != missingToolResultContent {
+		t.Fatalf("expected placeholder result for B, got %+v", result[3])
+	}
 }
 
 // TestSanitizeHistoryForProvider_MissingAllToolResults tests the case where
@@ -311,12 +313,11 @@ func TestSanitizeHistoryForProvider_MissingAllToolResults(t *testing.T) {
 	}
 
 	result := sanitizeHistoryForProvider(history)
-	// The assistant message with no tool results should be dropped.
-	// Remaining: user ("do something"), user ("hello"), assistant ("hi")
-	if len(result) != 3 {
-		t.Fatalf("expected 3 messages, got %d: %+v", len(result), roles(result))
+	// repairToolCallHistory adds a placeholder result for A.
+	if len(result) != 5 {
+		t.Fatalf("expected 5 messages, got %d: %+v", len(result), roles(result))
 	}
-	assertRoles(t, result, "user", "user", "assistant")
+	assertRoles(t, result, "user", "assistant", "tool", "user", "assistant")
 }
 
 // TestSanitizeHistoryForProvider_PartialToolResultsInMiddle tests that
@@ -338,12 +339,13 @@ func TestSanitizeHistoryForProvider_PartialToolResultsInMiddle(t *testing.T) {
 	}
 
 	result := sanitizeHistoryForProvider(history)
-	// First round is complete (user, assistant+tools, tool, assistant),
-	// second round is incomplete and dropped (assistant+tools, partial tool),
-	// third round is complete (user, assistant+tools, tool, assistant).
-	// Remaining: user, assistant, tool, assistant, user, user, assistant, tool, assistant
-	if len(result) != 9 {
-		t.Fatalf("expected 9 messages, got %d: %+v", len(result), roles(result))
+	// The second round gets a placeholder result for C (repairToolCallHistory)
+	// instead of being dropped.
+	if len(result) != 12 {
+		t.Fatalf("expected 12 messages, got %d: %+v", len(result), roles(result))
 	}
-	assertRoles(t, result, "user", "assistant", "tool", "assistant", "user", "user", "assistant", "tool", "assistant")
+	assertRoles(t, result,
+		"user", "assistant", "tool", "assistant",
+		"user", "assistant", "tool", "tool",
+		"user", "assistant", "tool", "assistant")
 }
