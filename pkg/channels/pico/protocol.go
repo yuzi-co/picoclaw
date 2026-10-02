@@ -19,6 +19,7 @@ const (
 	TypeMediaCreate   = "media.create"
 	TypeTypingStart   = "typing.start"
 	TypeTypingStop    = "typing.stop"
+	TypeTurnDone      = "turn.done"
 	TypeError         = "error"
 	TypePong          = "pong"
 
@@ -28,6 +29,7 @@ const (
 	PayloadKeyPlaceholder = "placeholder"
 	PayloadKeyToolCalls   = "tool_calls"
 	PayloadKeyModelName   = "model_name"
+	PayloadKeyUsage       = "usage"
 
 	MessageKindThought   = "thought"
 	MessageKindToolCalls = "tool_calls"
