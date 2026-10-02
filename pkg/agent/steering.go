@@ -386,8 +386,8 @@ func (al *AgentLoop) Continue(ctx context.Context, sessionKey, channel, chatID s
 	}
 
 	if err := al.ensureHooksInitialized(ctx); err != nil {
-		logger.WarnCF("agent", "Hooks failed to initialize, continuing without hooks",
-			map[string]any{"error": err.Error()})
+		al.activeTurnStates.Delete(sessionKey)
+		return "", err
 	}
 	if err := al.ensureMCPInitialized(ctx); err != nil {
 		logger.WarnCF("agent", "MCP initialization failed, continuing without MCP tools",
