@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -1367,6 +1368,40 @@ func TestLoadConfig_WebPreferNativeDefaultsTrueWhenUnset(t *testing.T) {
 	}
 	if !cfg.Tools.Web.PreferNative {
 		t.Fatal("PreferNative should remain true when unset in config file")
+	}
+}
+
+// A config written before Kagi search was removed keeps loading: the kagi
+// section is ignored and the provider name is left for the web search tool,
+// which falls back to auto selection. Other unknown fields still fail.
+func TestLoadConfig_IgnoresRemovedKagiSection(t *testing.T) {
+	for _, version := range []int{1, CurrentVersion} {
+		dir := t.TempDir()
+		configPath := filepath.Join(dir, "config.json")
+		data := fmt.Sprintf(`{"version":%d,"tools":{"web":{"enabled":true,"provider":"kagi",`+
+			`"kagi":{"enabled":true,"api_keys":["kagi-secret"],"base_url":"https://kagi.com/api/v1/search","max_results":5}}}}`,
+			version)
+		if err := os.WriteFile(configPath, []byte(data), 0o600); err != nil {
+			t.Fatalf("WriteFile() error: %v", err)
+		}
+
+		cfg, err := LoadConfig(configPath)
+		if err != nil {
+			t.Fatalf("version %d: LoadConfig() error: %v", version, err)
+		}
+		if cfg.Tools.Web.Provider != "kagi" {
+			t.Fatalf("version %d: Provider = %q, want kagi", version, cfg.Tools.Web.Provider)
+		}
+	}
+
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.json")
+	data := fmt.Sprintf(`{"version":%d,"tools":{"web":{"kagi_typo":{}}}}`, CurrentVersion)
+	if err := os.WriteFile(configPath, []byte(data), 0o600); err != nil {
+		t.Fatalf("WriteFile() error: %v", err)
+	}
+	if _, err := LoadConfig(configPath); err == nil {
+		t.Fatal("LoadConfig() accepted an unknown field")
 	}
 }
 

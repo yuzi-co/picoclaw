@@ -10,7 +10,56 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/term"
+
+	"github.com/sipeed/picoclaw/pkg/logger"
 )
+
+// removedConfigFields are config.json fields this build no longer has, with
+// the reason. A config written by an older build may still carry them: they
+// are ignored, with a warning from LoadConfig, instead of failing the load as
+// other unknown fields do.
+var removedConfigFields = map[string]string{
+	"tools.web.kagi": "Kagi search was removed: its Go client states no license",
+}
+
+// warnRemovedConfigFields logs each removed field present in data. Only the
+// field name is logged, never its value, which may hold API keys.
+func warnRemovedConfigFields(data []byte, path string) {
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return
+	}
+	fields := make([]string, 0, len(removedConfigFields))
+	for field := range removedConfigFields {
+		fields = append(fields, field)
+	}
+	sort.Strings(fields)
+	for _, field := range fields {
+		if jsonPathPresent(raw, strings.Split(field, ".")) {
+			logger.WarnCF("config", "Ignoring removed config field", map[string]any{
+				"field":  field,
+				"reason": removedConfigFields[field],
+				"path":   path,
+			})
+		}
+	}
+}
+
+func jsonPathPresent(obj map[string]any, segments []string) bool {
+	for i, segment := range segments {
+		value, ok := obj[segment]
+		if !ok {
+			return false
+		}
+		if i == len(segments)-1 {
+			return true
+		}
+		if obj, ok = value.(map[string]any); !ok {
+			return false
+		}
+	}
+	return false
+}
 
 func decodeJSONWithDiagnostics(data []byte, target any, label string) error {
 	var raw any
@@ -18,7 +67,12 @@ func decodeJSONWithDiagnostics(data []byte, target any, label string) error {
 		return wrapJSONError(data, err, label)
 	}
 
-	unknownFields := collectUnknownJSONFields(raw, reflect.TypeOf(target), "")
+	var unknownFields []string
+	for _, field := range collectUnknownJSONFields(raw, reflect.TypeOf(target), "") {
+		if _, removed := removedConfigFields[field]; !removed {
+			unknownFields = append(unknownFields, field)
+		}
+	}
 	if len(unknownFields) > 0 {
 		sort.Strings(unknownFields)
 		return fmt.Errorf(
