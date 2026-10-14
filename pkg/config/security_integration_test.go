@@ -466,8 +466,9 @@ skills:
 		assert.Equal(t, "pplx-perplexity-from-file-22222", cfg.Tools.Web.Perplexity.APIKey())
 		t.Logf("Perplexity APIKey(): %s", cfg.Tools.Web.Perplexity.APIKey())
 
-		assert.Equal(t, "kagi-from-file-33333", cfg.Tools.Web.Kagi.APIKey())
-		t.Logf("Kagi APIKey(): %s", cfg.Tools.Web.Kagi.APIKey())
+		// The config and .security.yml above still carry a "kagi" section, as
+		// files written before Kagi search was removed do. It is ignored and
+		// the rest of the config loads.
 
 		// GLM Search - Note: GLM uses SetAPIKey (lowercase) internally
 		t.Logf("GLMSearch APIKey(): %s", cfg.Tools.Web.GLMSearch.APIKey.String())
