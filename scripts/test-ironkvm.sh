@@ -10,7 +10,7 @@
 # Usage: scripts/test-ironkvm.sh [extra go test args]
 #
 # Environment:
-#   GO_IMAGE  Go toolchain image (default golang:1.25.14)
+#   GO_IMAGE  Go toolchain image (default golang:1.26.11)
 #   RACE      1 to run with -race
 #   GOMODCACHE_VOLUME  docker volume for the module cache (default
 #             picoclaw-gomod)
@@ -19,7 +19,7 @@
 
 set -eu
 
-GO_IMAGE=${GO_IMAGE:-golang:1.25.14}
+GO_IMAGE=${GO_IMAGE:-golang:1.26.11}
 RACE=${RACE:-0}
 GOMODCACHE_VOLUME=${GOMODCACHE_VOLUME:-picoclaw-gomod}
 DOCKER=${DOCKER:-docker}
