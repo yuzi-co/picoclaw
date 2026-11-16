@@ -9,7 +9,7 @@
 # Usage: scripts/build-ironkvm.sh [revision]
 #
 # Environment:
-#   GO_IMAGE   Go toolchain image (default golang:1.25.14)
+#   GO_IMAGE   Go toolchain image (default golang:1.26.11)
 #   OUT_DIR    output directory (default build/)
 #   GO_TAGS    build tags (default goolm,stdjson,ironkvm; never add
 #              whatsapp_native, it links GPL-3.0 libsignal)
@@ -21,7 +21,7 @@
 set -eu
 
 REV=${1:-HEAD}
-GO_IMAGE=${GO_IMAGE:-golang:1.25.14}
+GO_IMAGE=${GO_IMAGE:-golang:1.26.11}
 GO_TAGS=${GO_TAGS:-goolm,stdjson,ironkvm}
 GOMODCACHE_VOLUME=${GOMODCACHE_VOLUME-picoclaw-gomod}
 DOCKER=${DOCKER:-docker}
